@@ -1,0 +1,26 @@
+{
+  "name": "squeezex",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@discordjs/rest": "^2.5.1",
+    "axios": "^1.11.0",
+    "body-parser": "^2.2.0",
+    "chalk": "^4.1.2",
+    "cheerio": "^1.1.2",
+    "discord-api-types": "^0.38.18",
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.2",
+    "node-schedule": "^2.1.1",
+    "puppeteer": "^24.15.0"
+  }
+}
