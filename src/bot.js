@@ -5,6 +5,8 @@ const {
   GatewayIntentBits,
   EmbedBuilder,
   Collection,
+  REST,
+  Routes,
 } = require("discord.js");
 const schedule = require("node-schedule");
 const tradingTips = require("./tips.js");
@@ -27,8 +29,34 @@ const commandFiles = fs
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
-  client.commands.set(command.name, command);
+  if ("data" in command && "execute" in command) {
+    client.commands.set(command.data.name, command); // ✅ Slash command
+  } else if ("name" in command && "execute" in command) {
+    client.commands.set(command.name, command); // ✅ Message command fallback
+  } else {
+    console.warn(`⚠️ Skipping "${file}" - missing required properties`);
+  }
 }
+
+// ✅ Register slash commands with Discord API
+const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+
+(async () => {
+  const slashCommands = client.commands
+    .filter((cmd) => "data" in cmd)
+    .map((cmd) => cmd.data.toJSON());
+
+  try {
+    console.log("⏳ Registering slash commands...");
+    await rest.put(
+      Routes.applicationCommands(process.env.CLIENT_ID), // or applicationGuildCommands(clientId, guildId) for testing
+      { body: slashCommands }
+    );
+    console.log("✅ Slash commands registered.");
+  } catch (err) {
+    console.error("❌ Slash command registration failed:", err);
+  }
+})();
 
 // ✅ Bot ready
 client.once("ready", () => {
@@ -36,7 +64,7 @@ client.once("ready", () => {
 
   // ⏱️ Send random trading tip every hour
   schedule.scheduleJob("0 * * * *", () => {
-    sendDailyTip("1362258860319969333"); // tip channel ID
+    sendDailyTip("1362258860319969333"); // Tip channel ID
   });
 });
 
@@ -63,6 +91,24 @@ client.on("messageCreate", async (message) => {
   } catch (error) {
     console.error("❌ Command Error:", error);
     message.reply("❌ There was an error executing that command.");
+  }
+});
+
+// 🆕 Handle slash command interactions
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    console.error("❌ Slash Command Error:", error);
+    await interaction.reply({
+      content: "❌ Error executing this command.",
+      ephemeral: true,
+    });
   }
 });
 
